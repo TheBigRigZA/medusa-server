@@ -1,0 +1,45 @@
+name: medusa-server
+services:
+  - name: medusa
+    environment_slug: node-js
+    github:
+      repo: YOUR_GITHUB_USERNAME/YOUR_REPO_NAME
+      branch: main
+      deploy_on_push: true
+    build_command: yarn install && yarn build
+    run_command: yarn start
+    http_port: 9000
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    envs:
+      - key: NODE_ENV
+        value: production
+        scope: RUN_AND_BUILD_TIME
+      - key: DATABASE_URL
+        value: "${medusa.DATABASE_URL}"
+        scope: RUN_TIME
+        type: SECRET
+      - key: REDIS_URL
+        value: "${medusa.REDIS_URL}"
+        scope: RUN_TIME
+        type: SECRET
+      - key: JWT_SECRET
+        value: "${medusa.JWT_SECRET}"
+        scope: RUN_TIME
+        type: SECRET
+      - key: COOKIE_SECRET
+        value: "${medusa.COOKIE_SECRET}"
+        scope: RUN_TIME
+        type: SECRET
+      - key: STORE_CORS
+        value: "https://your-storefront-domain.com,http://localhost:8000"
+        scope: RUN_TIME
+      - key: ADMIN_CORS
+        value: "https://your-admin-domain.com,http://localhost:9000"
+        scope: RUN_TIME
+      - key: AUTH_CORS
+        value: "https://your-storefront-domain.com,https://your-admin-domain.com,http://localhost:8000,http://localhost:9000"
+        scope: RUN_TIME
+      - key: MEDUSA_ADMIN_ONBOARDING_TYPE
+        value: "default"
+        scope: RUN_TIME
