@@ -1,4 +1,5 @@
 const fs = require("fs");
+const path = require("path");
 
 ////////////////////////////// utils /////////////////////////////
 
@@ -87,63 +88,171 @@ const writeFile = (lines, filePath) => {
   console.log(`Updated ${filePath} successfully.`);
 };
 
+// Helper function to convert image to base64
+const imageToBase64 = (imagePath) => {
+  try {
+    const imageBuffer = fs.readFileSync(imagePath);
+    const base64String = imageBuffer.toString('base64');
+    const extension = path.extname(imagePath).substring(1);
+    return `data:image/${extension};base64,${base64String}`;
+  } catch (error) {
+    console.error(`Error converting image to base64: ${error}`);
+    return null;
+  }
+};
+
 ////////////////////////////// customizations /////////////////////////////
 
-// This is where you can add your customizations following the examples from the article
-// Currently, no customizations are applied - this is just the framework
+console.log("Applying Mediabox branding customizations...");
 
-console.log("Medusa Admin patch script - framework ready for customizations");
+try {
+  // 1) Welcome to Medusa -> Welcome to The Mediabox Global Ecommerce Store Admin Portal
+  const CHUNK_1 = findChunkFileByContainingText("Welcome to Medusa");
+  if (CHUNK_1) {
+    let lines = readFileAsLines(CHUNK_1);
+    for (let i = 0; i < lines.length; i++) {
+      lines[i] = lines[i].replace(/Welcome to Medusa/g, "Welcome to The Mediabox Global Ecommerce Store Admin Portal");
+    }
+    writeFile(lines, CHUNK_1);
+    console.log("✓ Updated welcome text");
+  }
 
-// Example customizations (commented out for now):
-// 
-// 1) Welcome to Medusa -> Welcome to Marketplace
-// const CHUNK_1 = findChunkFileByContainingText("Welcome to Medusa");
-// if (CHUNK_1) {
-//   let lines = readFileAsLines(CHUNK_1);
-//   for (let i = 0; i < lines.length; i++) {
-//     lines[i] = lines[i].replace(/Welcome to Medusa/g, "Welcome to Marketplace");
-//   }
-//   writeFile(lines, CHUNK_1);
-// }
+  // 2) Replace logo on login page
+  const LOGIN_PATH = findFilePathByNamePattern("login-", ".mjs");
+  const loginLogoBase64 = imageToBase64(path.join(__dirname, 'assets', 'logo-login.png'));
+  
+  if (loginLogoBase64) {
+    let lines = readFileAsLines(LOGIN_PATH);
+    
+    // Find and replace the AvatarBox/LogoBox with custom logo
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].includes("AvatarBox") || lines[i].includes("LogoBox")) {
+        // Replace with custom logo component
+        lines[i] = lines[i].replace(
+          /jsx\d*\("div",{className:"[^"]*avatar[^"]*"[^}]*}\)/g,
+          `jsx14("div",{className:"flex justify-center mb-6",children:jsx14("img",{src:"${loginLogoBase64}",alt:"Mediabox",className:"h-16 w-auto"})})`
+        );
+        lines[i] = lines[i].replace(
+          /jsx\d*\(AvatarBox[^)]*\)/g,
+          `jsx14("div",{className:"flex justify-center mb-6",children:jsx14("img",{src:"${loginLogoBase64}",alt:"Mediabox",className:"h-16 w-auto"})})`
+        );
+      }
+    }
+    writeFile(lines, LOGIN_PATH);
+    console.log("✓ Updated login page logo");
+  }
 
-// 2) Hide avatar logo on login page
-// const LOGIN_PATH = findFilePathByNamePattern("login-", ".mjs");
-// lines = readFileAsLines(LOGIN_PATH);
-// lines = removeOccurrence(lines, "AvatarBox");
-// writeFile(lines, LOGIN_PATH);
+  // 3) Replace logo on reset password page
+  const REST_PASSWORD_PATH = findFilePathByNamePattern("reset-password-", ".mjs");
+  if (loginLogoBase64) {
+    let lines = readFileAsLines(REST_PASSWORD_PATH);
+    
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].includes("LogoBox")) {
+        lines[i] = lines[i].replace(
+          /jsx\d*\(LogoBox[^)]*\)/g,
+          `jsx14("div",{className:"flex justify-center mb-6",children:jsx14("img",{src:"${loginLogoBase64}",alt:"Mediabox",className:"h-16 w-auto"})})`
+        );
+      }
+    }
+    writeFile(lines, REST_PASSWORD_PATH);
+    console.log("✓ Updated reset password page logo");
+  }
 
-// 3) Hide avatar logo on reset password page
-// const REST_PASSWORD_PATH = findFilePathByNamePattern("reset-password-", ".mjs");
-// lines = readFileAsLines(REST_PASSWORD_PATH);
-// lines = removeOccurrence(lines, "LogoBox");
-// writeFile(lines, REST_PASSWORD_PATH);
+  // 4) Update header logo and apply color scheme
+  const APP_MJS_PATH = `${__dirname}/node_modules/@medusajs/dashboard/dist/app.mjs`;
+  const headerLogoBase64 = imageToBase64(path.join(__dirname, 'assets', 'logo-header.png'));
+  
+  if (headerLogoBase64) {
+    let lines = readFileAsLines(APP_MJS_PATH);
+    
+    // Add custom CSS for Mediabox branding
+    const customCSS = `
+    <style>
+      :root {
+        --mediabox-primary: #df3d58;
+        --mediabox-secondary: #d74e2f;
+      }
+      
+      /* Update primary buttons */
+      .bg-ui-button-inverted, 
+      .bg-ui-button-inverted-hover:hover {
+        background-color: var(--mediabox-primary) !important;
+      }
+      
+      /* Update primary text colors */
+      .text-ui-fg-interactive {
+        color: var(--mediabox-primary) !important;
+      }
+      
+      /* Update focus states */
+      .focus\\:shadow-borders-interactive-with-focus:focus {
+        box-shadow: 0 0 0 3px var(--mediabox-primary) !important;
+      }
+      
+      /* Update active states */
+      .bg-ui-bg-interactive {
+        background-color: var(--mediabox-primary) !important;
+      }
+      
+      /* Update header logo */
+      .medusa-logo {
+        display: none;
+      }
+    </style>
+    `;
+    
+    // Find the main app component and inject custom styles
+    for (let i = 0; i < lines.length; i++) {
+      // Inject custom CSS
+      if (lines[i].includes("document.head") && !lines[i].includes("mediabox-styles")) {
+        lines[i] = lines[i] + `\n// Inject Mediabox styles\nconst mediaboxStyles = document.createElement('style');\nmediaboxStyles.id = 'mediabox-styles';\nmediaboxStyles.innerHTML = \`${customCSS.replace(/\n/g, '\\n')}\`;\ndocument.head.appendChild(mediaboxStyles);`;
+      }
+      
+      // Replace header logo
+      if (lines[i].includes("medusa-logo") || lines[i].includes("MedusaLogo")) {
+        lines[i] = lines[i].replace(
+          /jsx\d*\([^,]*MedusaLogo[^)]*\)/g,
+          `jsx14("img",{src:"${headerLogoBase64}",alt:"Mediabox",className:"h-8 w-auto"})`
+        );
+      }
+    }
+    
+    writeFile(lines, APP_MJS_PATH);
+    console.log("✓ Updated header logo and applied color scheme");
+  }
 
-// 4) Hide documentation and changelog links from menu
-// const APP_MJS_PATH = `${__dirname}/node_modules/@medusajs/dashboard/dist/app.mjs`;
-// lines = readFileAsLines(APP_MJS_PATH);
-// lines.forEach((line, index) => {
-//   if (line.includes("app.menus.user.documentation")) {
-//     lines[index - 3] = "";
-//     lines[index - 2] = "";
-//     lines[index - 1] = "";
-//     lines[index] = "";
-//     lines[index + 1] = "";
-//   }
-//
-//   if (line.includes("app.menus.user.changelog")) {
-//     lines[index - 2] = "";
-//     lines[index - 1] = "";
-//     lines[index] = "";
-//     lines[index + 1] = "";
-//   }
-// });
-// writeFile(lines, APP_MJS_PATH);
+  // 5) Update favicon
+  const faviconPath = path.join(__dirname, 'assets', 'favicon.ico');
+  const distPath = `${__dirname}/node_modules/@medusajs/dashboard/dist`;
+  
+  if (fs.existsSync(faviconPath)) {
+    // Copy favicon to dist folder
+    fs.copyFileSync(faviconPath, path.join(distPath, 'favicon.ico'));
+    
+    // Update index.html to use new favicon
+    const indexPath = path.join(distPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      let indexContent = fs.readFileSync(indexPath, 'utf8');
+      indexContent = indexContent.replace(
+        /<link[^>]*rel="icon"[^>]*>/g,
+        '<link rel="icon" type="image/x-icon" href="/favicon.ico">'
+      );
+      fs.writeFileSync(indexPath, indexContent);
+      console.log("✓ Updated favicon");
+    }
+  }
 
-// Reset Vite cache (uncomment when customizations are applied)
-// const VITE_CACHE_PATH = `${__dirname}/node_modules/@medusajs/admin-bundler/node_modules/.vite`;
-// if (fs.existsSync(VITE_CACHE_PATH)) {
-//   fs.rmSync(VITE_CACHE_PATH, { recursive: true, force: true });
-//   console.log("Vite cache cleared successfully.");
-// } else {
-//   console.log("Vite cache directory not found.");
-// }
+  // Reset Vite cache
+  const VITE_CACHE_PATH = `${__dirname}/node_modules/@medusajs/admin-bundler/node_modules/.vite`;
+  if (fs.existsSync(VITE_CACHE_PATH)) {
+    fs.rmSync(VITE_CACHE_PATH, { recursive: true, force: true });
+    console.log("✓ Vite cache cleared successfully");
+  }
+
+  console.log("\n✅ Mediabox branding customizations applied successfully!");
+
+} catch (error) {
+  console.error("❌ Error applying customizations:", error);
+  process.exit(1);
+}
