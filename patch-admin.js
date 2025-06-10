@@ -104,42 +104,129 @@ const imageToBase64 = (imagePath) => {
 ////////////////////////////// customizations /////////////////////////////
 
 console.log("Applying Mediabox branding customizations...");
+console.log("Working directory:", __dirname);
 
 try {
   // 1) Welcome to Medusa -> Welcome to The Mediabox Global Ecommerce Store Admin Portal
+  console.log("\n1. Searching for welcome text...");
   const CHUNK_1 = findChunkFileByContainingText("Welcome to Medusa");
   if (CHUNK_1) {
     let lines = readFileAsLines(CHUNK_1);
+    let replacementCount = 0;
     for (let i = 0; i < lines.length; i++) {
-      lines[i] = lines[i].replace(/Welcome to Medusa/g, "Welcome to The Mediabox Global Ecommerce Store Admin Portal");
-    }
-    writeFile(lines, CHUNK_1);
-    console.log("✓ Updated welcome text");
-  }
-
-  // 2) Replace logo on login page
-  const LOGIN_PATH = findFilePathByNamePattern("login-", ".mjs");
-  const loginLogoBase64 = imageToBase64(path.join(__dirname, 'assets', 'logo-login.png'));
-  
-  if (loginLogoBase64) {
-    let lines = readFileAsLines(LOGIN_PATH);
-    
-    // Find and replace the AvatarBox/LogoBox with custom logo
-    for (let i = 0; i < lines.length; i++) {
-      if (lines[i].includes("AvatarBox") || lines[i].includes("LogoBox")) {
-        // Replace with custom logo component
-        lines[i] = lines[i].replace(
-          /jsx\d*\("div",{className:"[^"]*avatar[^"]*"[^}]*}\)/g,
-          `jsx14("div",{className:"flex justify-center mb-6",children:jsx14("img",{src:"${loginLogoBase64}",alt:"Mediabox",className:"h-16 w-auto"})})`
-        );
-        lines[i] = lines[i].replace(
-          /jsx\d*\(AvatarBox[^)]*\)/g,
-          `jsx14("div",{className:"flex justify-center mb-6",children:jsx14("img",{src:"${loginLogoBase64}",alt:"Mediabox",className:"h-16 w-auto"})})`
-        );
+      if (lines[i].includes("Welcome to Medusa")) {
+        lines[i] = lines[i].replace(/Welcome to Medusa/g, "Welcome to The Mediabox Global Ecommerce Store Admin Portal");
+        replacementCount++;
       }
     }
-    writeFile(lines, LOGIN_PATH);
-    console.log("✓ Updated login page logo");
+    writeFile(lines, CHUNK_1);
+    console.log(`✓ Updated welcome text (${replacementCount} replacements)`);
+  } else {
+    console.log("⚠️  Could not find chunk file containing 'Welcome to Medusa'");
+  }
+
+  // 2) Replace logo on login page - More aggressive approach
+  console.log("\n2. Updating login page logo...");
+  try {
+    const LOGIN_PATH = findFilePathByNamePattern("login-", ".mjs");
+    console.log("Found login file:", LOGIN_PATH);
+    
+    const loginLogoBase64 = imageToBase64(path.join(__dirname, 'assets', 'logo-login.png'));
+    
+    if (loginLogoBase64) {
+      console.log("✓ Logo converted to base64");
+      let content = fs.readFileSync(LOGIN_PATH, 'utf8');
+      let originalContent = content;
+      
+      // Create a custom logo component that we'll inject
+      const customLogoComponent = `jsx14("div",{className:"flex justify-center mb-6",children:jsx14("img",{src:"${loginLogoBase64}",alt:"Mediabox",className:"h-20 w-auto"})})`;
+      
+      // Pattern 1: Replace AvatarBox components
+      content = content.replace(/jsx\d*\(AvatarBox[^)]*\)/g, customLogoComponent);
+      
+      // Pattern 2: Replace LogoBox components
+      content = content.replace(/jsx\d*\(LogoBox[^)]*\)/g, customLogoComponent);
+      
+      // Pattern 3: Replace any div with avatar-related classes
+      content = content.replace(
+        /jsx\d*\("div",\s*{\s*className:\s*"[^"]*(?:avatar|logo)[^"]*"[^}]*}\)/g, 
+        customLogoComponent
+      );
+      
+      // Pattern 4: Look for specific Medusa logo references
+      content = content.replace(/jsx\d*\([^,]*MedusaLogo[^)]*\)/g, customLogoComponent);
+      
+      // Pattern 5: Replace svg elements that might be logos
+      content = content.replace(
+        /jsx\d*\("svg",\s*{[^}]*(?:width:\s*"40"|height:\s*"40")[^}]*}\)/g,
+        customLogoComponent
+      );
+      
+      if (content !== originalContent) {
+        fs.writeFileSync(LOGIN_PATH, content);
+        console.log("✓ Updated login page logo");
+      } else {
+        console.log("⚠️  No logo patterns found in login page");
+        
+        // Try to find any jsx element that might be the logo container
+        const lines = content.split('\n');
+        for (let i = 0; i < lines.length; i++) {
+          if (lines[i].includes('login') && lines[i].includes('jsx')) {
+            console.log(`  Line ${i}: ${lines[i].substring(0, 100)}...`);
+          }
+        }
+      }
+    } else {
+      console.log("❌ Failed to convert logo to base64");
+    }
+  } catch (error) {
+    console.log("❌ Error updating login page:", error.message);
+  }
+
+  // 2b) Alternative approach - inject CSS to hide default logo and show custom one
+  console.log("\n2b. Injecting CSS for login page branding...");
+  try {
+    const LOGIN_PATH = findFilePathByNamePattern("login-", ".mjs");
+    let content = fs.readFileSync(LOGIN_PATH, 'utf8');
+    
+    const loginLogoBase64 = imageToBase64(path.join(__dirname, 'assets', 'logo-login.png'));
+    
+    if (loginLogoBase64 && !content.includes('mediabox-login-styles')) {
+      // Inject CSS at the beginning of the file
+      const customLoginCSS = `
+// Inject Mediabox login styles
+if (typeof document !== 'undefined' && !document.getElementById('mediabox-login-styles')) {
+  const style = document.createElement('style');
+  style.id = 'mediabox-login-styles';
+  style.innerHTML = \`
+    /* Hide default Medusa logo */
+    [class*="avatar"], [class*="logo"] {
+      display: none !important;
+    }
+    
+    /* Add Mediabox logo */
+    form::before {
+      content: '';
+      display: block;
+      width: 200px;
+      height: 80px;
+      margin: 0 auto 2rem;
+      background-image: url('${loginLogoBase64}');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+  \`;
+  document.head.appendChild(style);
+}
+`;
+      
+      content = customLoginCSS + '\n' + content;
+      fs.writeFileSync(LOGIN_PATH, content);
+      console.log("✓ Injected CSS for login page branding");
+    }
+  } catch (error) {
+    console.log("❌ Error injecting login CSS:", error.message);
   }
 
   // 3) Replace logo on reset password page
@@ -222,7 +309,7 @@ try {
     console.log("✓ Updated header logo and applied color scheme");
   }
 
-  // 5) Update favicon
+  // 5) Update favicon and inject global styles
   const faviconPath = path.join(__dirname, 'assets', 'favicon.ico');
   const distPath = `${__dirname}/node_modules/@medusajs/dashboard/dist`;
   
@@ -230,16 +317,96 @@ try {
     // Copy favicon to dist folder
     fs.copyFileSync(faviconPath, path.join(distPath, 'favicon.ico'));
     
-    // Update index.html to use new favicon
+    // Update index.html to use new favicon and inject global styles
     const indexPath = path.join(distPath, 'index.html');
     if (fs.existsSync(indexPath)) {
       let indexContent = fs.readFileSync(indexPath, 'utf8');
+      
+      // Update favicon
       indexContent = indexContent.replace(
         /<link[^>]*rel="icon"[^>]*>/g,
         '<link rel="icon" type="image/x-icon" href="/favicon.ico">'
       );
+      
+      // Inject global Mediabox styles if not already present
+      if (!indexContent.includes('mediabox-global-styles')) {
+        const loginLogoBase64 = imageToBase64(path.join(__dirname, 'assets', 'logo-login.png'));
+        const headerLogoBase64 = imageToBase64(path.join(__dirname, 'assets', 'logo-header.png'));
+        
+        const globalStyles = `
+    <style id="mediabox-global-styles">
+      :root {
+        --mediabox-primary: #df3d58;
+        --mediabox-secondary: #d74e2f;
+      }
+      
+      /* Hide all default Medusa logos */
+      [class*="avatar"], 
+      [class*="logo"],
+      svg[width="40"][height="40"],
+      .medusa-logo {
+        display: none !important;
+      }
+      
+      /* Login page logo */
+      form::before {
+        content: '';
+        display: block;
+        width: 200px;
+        height: 80px;
+        margin: 0 auto 2rem;
+        background-image: url('${loginLogoBase64}');
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+      }
+      
+      /* Header logo */
+      nav [class*="logo"]::after {
+        content: '';
+        display: block;
+        width: 150px;
+        height: 40px;
+        background-image: url('${headerLogoBase64}');
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center left;
+      }
+      
+      /* Update primary buttons */
+      .bg-ui-button-inverted, 
+      .bg-ui-button-inverted-hover:hover,
+      button[type="submit"] {
+        background-color: var(--mediabox-primary) !important;
+      }
+      
+      /* Update primary text colors */
+      .text-ui-fg-interactive,
+      a {
+        color: var(--mediabox-primary) !important;
+      }
+      
+      /* Update focus states */
+      input:focus,
+      button:focus,
+      .focus\\:shadow-borders-interactive-with-focus:focus {
+        box-shadow: 0 0 0 3px var(--mediabox-primary) !important;
+        border-color: var(--mediabox-primary) !important;
+      }
+      
+      /* Update active states */
+      .bg-ui-bg-interactive {
+        background-color: var(--mediabox-primary) !important;
+      }
+    </style>
+        `;
+        
+        // Insert styles before closing head tag
+        indexContent = indexContent.replace('</head>', globalStyles + '\n</head>');
+      }
+      
       fs.writeFileSync(indexPath, indexContent);
-      console.log("✓ Updated favicon");
+      console.log("✓ Updated favicon and injected global styles");
     }
   }
 
