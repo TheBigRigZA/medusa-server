@@ -13,6 +13,10 @@ sed -i 's/disable: true/disable: false/g' medusa-config.ts
 yarn install
 npx medusa build
 
+# Apply Mediabox branding customizations
+echo "Applying Mediabox branding customizations..."
+node patch-admin.js
+
 # Restore config
 sed -i 's/disable: false/disable: true/g' medusa-config.ts
 

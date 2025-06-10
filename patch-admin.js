@@ -230,20 +230,27 @@ if (typeof document !== 'undefined' && !document.getElementById('mediabox-login-
   }
 
   // 3) Replace logo on reset password page
-  const REST_PASSWORD_PATH = findFilePathByNamePattern("reset-password-", ".mjs");
-  if (loginLogoBase64) {
-    let lines = readFileAsLines(REST_PASSWORD_PATH);
+  console.log("\n3. Updating reset password page logo...");
+  try {
+    const REST_PASSWORD_PATH = findFilePathByNamePattern("reset-password-", ".mjs");
+    const loginLogoBase64 = imageToBase64(path.join(__dirname, 'assets', 'logo-login.png'));
     
-    for (let i = 0; i < lines.length; i++) {
-      if (lines[i].includes("LogoBox")) {
-        lines[i] = lines[i].replace(
-          /jsx\d*\(LogoBox[^)]*\)/g,
-          `jsx14("div",{className:"flex justify-center mb-6",children:jsx14("img",{src:"${loginLogoBase64}",alt:"Mediabox",className:"h-16 w-auto"})})`
-        );
+    if (loginLogoBase64) {
+      let lines = readFileAsLines(REST_PASSWORD_PATH);
+      
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].includes("LogoBox")) {
+          lines[i] = lines[i].replace(
+            /jsx\d*\(LogoBox[^)]*\)/g,
+            `jsx14("div",{className:"flex justify-center mb-6",children:jsx14("img",{src:"${loginLogoBase64}",alt:"Mediabox",className:"h-16 w-auto"})})`
+          );
+        }
       }
+      writeFile(lines, REST_PASSWORD_PATH);
+      console.log("✓ Updated reset password page logo");
     }
-    writeFile(lines, REST_PASSWORD_PATH);
-    console.log("✓ Updated reset password page logo");
+  } catch (error) {
+    console.log("❌ Error updating reset password page:", error.message);
   }
 
   // 4) Update header logo and apply color scheme
@@ -312,13 +319,10 @@ if (typeof document !== 'undefined' && !document.getElementById('mediabox-login-
   // 5) Update favicon and inject global styles
   const faviconPath = path.join(__dirname, 'assets', 'favicon.ico');
   const distPath = `${__dirname}/node_modules/@medusajs/dashboard/dist`;
+  const medusaAdminPath = `${__dirname}/.medusa/server/public/admin`;
   
-  if (fs.existsSync(faviconPath)) {
-    // Copy favicon to dist folder
-    fs.copyFileSync(faviconPath, path.join(distPath, 'favicon.ico'));
-    
-    // Update index.html to use new favicon and inject global styles
-    const indexPath = path.join(distPath, 'index.html');
+  // Function to update index.html
+  const updateIndexHtml = (indexPath) => {
     if (fs.existsSync(indexPath)) {
       let indexContent = fs.readFileSync(indexPath, 'utf8');
       
@@ -406,8 +410,28 @@ if (typeof document !== 'undefined' && !document.getElementById('mediabox-login-
       }
       
       fs.writeFileSync(indexPath, indexContent);
-      console.log("✓ Updated favicon and injected global styles");
+      console.log(`✓ Updated ${indexPath}`);
     }
+  };
+  
+  if (fs.existsSync(faviconPath)) {
+    // Copy favicon to dist folder
+    if (fs.existsSync(distPath)) {
+      fs.copyFileSync(faviconPath, path.join(distPath, 'favicon.ico'));
+    }
+    
+    // Copy favicon to medusa admin folder
+    if (fs.existsSync(medusaAdminPath)) {
+      fs.copyFileSync(faviconPath, path.join(medusaAdminPath, 'favicon.ico'));
+    }
+    
+    // Update index.html in dist folder
+    const distIndexPath = path.join(distPath, 'index.html');
+    updateIndexHtml(distIndexPath);
+    
+    // Update index.html in medusa admin folder
+    const medusaIndexPath = path.join(medusaAdminPath, 'index.html');
+    updateIndexHtml(medusaIndexPath);
   }
 
   // Reset Vite cache
