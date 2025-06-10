@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "description": "Medusa Admin Dashboard",
   "scripts": {
-    "postinstall": "node ../patch-admin.js",
-    "build": "cd .. && yarn install && NODE_OPTIONS='--max-old-space-size=2048' npx medusa build && cp -r ../.medusa/admin ./dist",
+    "build": "cd .. && yarn install && NODE_OPTIONS='--max-old-space-size=2048' yarn build && cp -r ../.medusa/admin ./dist",
     "start": "npx serve dist -l 8080"
   },
   "dependencies": {
