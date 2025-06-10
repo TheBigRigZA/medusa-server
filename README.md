@@ -1,62 +1,149 @@
-<p align="center">
-  <a href="https://www.medusajs.com">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/59018053/229103275-b5e482bb-4601-46e6-8142-244f531cebdb.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://user-images.githubusercontent.com/59018053/229103726-e5b529a3-9b3f-4970-8a1f-c6af37f087bf.svg">
-    <img alt="Medusa logo" src="https://user-images.githubusercontent.com/59018053/229103726-e5b529a3-9b3f-4970-8a1f-c6af37f087bf.svg">
-    </picture>
-  </a>
-</p>
-<h1 align="center">
-  Medusa
-</h1>
+# Medusa Server
 
-<h4 align="center">
-  <a href="https://docs.medusajs.com">Documentation</a> |
-  <a href="https://www.medusajs.com">Website</a>
-</h4>
+This is the backend API server for our Medusa-powered e-commerce platform.
 
-<p align="center">
-  Building blocks for digital commerce
-</p>
-<p align="center">
-  <a href="https://github.com/medusajs/medusa/blob/master/CONTRIBUTING.md">
-    <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat" alt="PRs welcome!" />
-  </a>
-    <a href="https://www.producthunt.com/posts/medusa"><img src="https://img.shields.io/badge/Product%20Hunt-%231%20Product%20of%20the%20Day-%23DA552E" alt="Product Hunt"></a>
-  <a href="https://discord.gg/xpCwq3Kfn8">
-    <img src="https://img.shields.io/badge/chat-on%20discord-7289DA.svg" alt="Discord Chat" />
-  </a>
-  <a href="https://twitter.com/intent/follow?screen_name=medusajs">
-    <img src="https://img.shields.io/twitter/follow/medusajs.svg?label=Follow%20@medusajs" alt="Follow @medusajs" />
-  </a>
-</p>
+## Baseline Working Commit
 
-## Compatibility
+**Commit Hash**: `43de6b02f5a13e37b5d1b1adfde31d007dca847b`  
+**Message**: "Disable admin in Medusa config - serve via static site"
 
-This starter is compatible with versions >= 2 of `@medusajs/medusa`. 
+To checkout this baseline version:
+```bash
+git checkout 43de6b02f5a13e37b5d1b1adfde31d007dca847b
+```
 
-## Getting Started
+## Overview
 
-Visit the [Quickstart Guide](https://docs.medusajs.com/learn/installation) to set up a server.
+This server provides the core Medusa API functionality with the following key configurations:
+- **Database**: Supabase (PostgreSQL)
+- **Admin Panel**: Disabled (served separately as static site)
+- **Deployment**: Digital Ocean App Platform
+- **API URL**: https://shop.mediabox.co
 
-Visit the [Docs](https://docs.medusajs.com/learn/installation#get-started) to learn more about our system requirements.
+## Prerequisites
 
-## What is Medusa
+- Node.js >= 20
+- PostgreSQL database (we use Supabase)
+- Redis instance (optional but recommended)
 
-Medusa is a set of commerce modules and tools that allow you to build rich, reliable, and performant commerce applications without reinventing core commerce logic. The modules can be customized and used to build advanced ecommerce stores, marketplaces, or any product that needs foundational commerce primitives. All modules are open-source and freely available on npm.
+## Environment Variables
 
-Learn more about [Medusa’s architecture](https://docs.medusajs.com/learn/introduction/architecture) and [commerce modules](https://docs.medusajs.com/learn/fundamentals/modules/commerce-modules) in the Docs.
+Create a `.env` file based on `.env.template`:
 
-## Community & Contributions
+```bash
+# Database
+DATABASE_URL=your_supabase_connection_string
 
-The community and core team are available in [GitHub Discussions](https://github.com/medusajs/medusa/discussions), where you can ask for support, discuss roadmap, and share ideas.
+# Redis (optional)
+REDIS_URL=your_redis_url
 
-Join our [Discord server](https://discord.com/invite/medusajs) to meet other community members.
+# CORS Configuration
+STORE_CORS=https://your-storefront-domain.com
+ADMIN_CORS=https://shop.mediabox.co
+AUTH_CORS=https://shop.mediabox.co
 
-## Other channels
+# Security
+JWT_SECRET=your_jwt_secret
+COOKIE_SECRET=your_cookie_secret
 
-- [GitHub Issues](https://github.com/medusajs/medusa/issues)
-- [Twitter](https://twitter.com/medusajs)
-- [LinkedIn](https://www.linkedin.com/company/medusajs)
-- [Medusa Blog](https://medusajs.com/blog/)
+# Backend URL
+MEDUSA_BACKEND_URL=https://shop.mediabox.co
+```
+
+## Installation
+
+```bash
+# Install dependencies
+yarn install
+
+# Run database migrations
+yarn medusa migrations run
+
+# Seed the database (optional)
+yarn seed
+```
+
+## Development
+
+```bash
+# Start development server
+yarn dev
+```
+
+The server will run on http://localhost:9000
+
+## Production Build
+
+```bash
+# Build for production
+yarn build
+
+# Start production server
+yarn start
+```
+
+## Key Configuration
+
+The server configuration is in `medusa-config.ts`:
+- Admin panel is disabled (`admin.disable: true`)
+- CORS settings are configured for production domains
+- Database connection uses Supabase
+
+## API Documentation
+
+The Medusa API follows RESTful conventions. Key endpoints include:
+- `/store/*` - Storefront API
+- `/admin/*` - Admin API (requires authentication)
+- `/auth/*` - Authentication endpoints
+
+Full API documentation: https://docs.medusajs.com/api/store
+
+## Deployment
+
+This server is deployed to Digital Ocean App Platform. The deployment is configured to:
+1. Build the server
+2. Run migrations automatically
+3. Start the production server
+
+## Project Structure
+
+```
+medusa-server/
+├── src/
+│   ├── api/          # Custom API routes
+│   ├── jobs/         # Background jobs
+│   ├── links/        # Module links
+│   ├── modules/      # Custom modules
+│   ├── scripts/      # Utility scripts
+│   ├── subscribers/  # Event subscribers
+│   └── workflows/    # Custom workflows
+├── medusa-config.ts  # Main configuration
+├── package.json      # Dependencies
+└── README.md         # This file
+```
+
+## Troubleshooting
+
+### Database Connection Issues
+- Ensure your Supabase connection string is correct
+- Check if SSL is required (add `?sslmode=require` to connection string)
+
+### CORS Errors
+- Verify CORS environment variables match your frontend domains
+- Ensure trailing slashes are consistent
+
+### Build Failures
+- Clear node_modules and reinstall: `rm -rf node_modules && yarn install`
+- Check Node.js version (must be >= 20)
+
+## Related Repositories
+
+- **Admin Panel**: Served separately as a static site at https://shop.mediabox.co/app
+- See `admin-deployment/README.md` for admin customization details
+
+## Support
+
+For Medusa-specific issues, refer to:
+- [Medusa Documentation](https://docs.medusajs.com)
+- [Medusa GitHub](https://github.com/medusajs/medusa)
+- [Medusa Discord](https://discord.gg/medusajs)
