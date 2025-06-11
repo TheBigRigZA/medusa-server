@@ -18,17 +18,17 @@ module.exports = defineConfig({
     disable: true,
     backendUrl: process.env.MEDUSA_BACKEND_URL || "https://shop.mediabox.co"
   },
-  modules: process.env.S3_ACCESS_KEY_ID ? {
-    fileService: {
-      resolve: "@medusajs/file-s3",
-      options: {
-        region: process.env.S3_REGION || "fra1",
-        bucket: process.env.S3_BUCKET || "mediaboxstuff",
-        access_key_id: process.env.S3_ACCESS_KEY_ID,
-        secret_access_key: process.env.S3_SECRET_ACCESS_KEY,
-        endpoint: process.env.S3_ENDPOINT || "https://fra1.digitaloceanspaces.com",
-        prefix: process.env.S3_PREFIX || "Medusa-Webstore"
-      },
-    },
-  } : {},
+  // modules: process.env.S3_ACCESS_KEY_ID ? {
+  //   fileService: {
+  //     resolve: "@medusajs/file-s3",
+  //     options: {
+  //       region: process.env.S3_REGION || "fra1",
+  //       bucket: process.env.S3_BUCKET || "mediaboxstuff",
+  //       access_key_id: process.env.S3_ACCESS_KEY_ID,
+  //       secret_access_key: process.env.S3_SECRET_ACCESS_KEY,
+  //       endpoint: process.env.S3_ENDPOINT || "https://fra1.digitaloceanspaces.com",
+  //       prefix: process.env.S3_PREFIX || "Medusa-Webstore"
+  //     },
+  //   },
+  // } : {},
 })
