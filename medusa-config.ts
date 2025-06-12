@@ -18,7 +18,7 @@ module.exports = defineConfig({
     disable: true,
     backendUrl: process.env.MEDUSA_BACKEND_URL || "https://shop.mediabox.co"
   },
-  modules: process.env.S3_ACCESS_KEY_ID ? [
+  modules: process.env.ENABLE_S3 === "true" ? [
     {
       resolve: "@medusajs/medusa/file",
       options: {
