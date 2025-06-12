@@ -32,7 +32,7 @@ module.exports = defineConfig({
               secret_access_key: process.env.S3_SECRET_ACCESS_KEY,
               region: process.env.S3_REGION || "fra1",
               bucket: process.env.S3_BUCKET || "mediaboxstuff",
-              endpoint: process.env.S3_ENDPOINT || "https://fra1.digitaloceanspaces.com",
+              endpoint: process.env.S3_ENDPOINT || "fra1.digitaloceanspaces.com",
               prefix: process.env.S3_PREFIX || "Medusa-Webstore"
             },
           },
