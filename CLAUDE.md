@@ -65,17 +65,17 @@ The codebase follows Medusa's modular architecture:
 - `src/links/` - Module linking configurations
 
 ### Admin Panel Customization
-The admin panel uses a patch script approach (`patch-admin.js`) that:
-1. Builds the standard Medusa admin
+**Important**: The admin panel is NOT built in this repository!
+- Admin is disabled here (`admin.disable: true`)
+- Admin is built and deployed from separate repo: `TheBigRigZA/medusa-admin`
+- The `patch-admin.js` script exists here but CANNOT run without admin files
+- Customizations must be applied in the admin repository during its build process
+
+The patch script approach:
+1. Should run in the admin repository
 2. Modifies compiled chunk files to apply Mediabox branding
 3. Replaces logos, text, and removes unwanted menu items
 4. Uses helper functions to find and modify specific chunks
-
-Key patch script functions:
-- `findFilePathByNamePattern()` - Find files by pattern
-- `findChunkFileByContainingText()` - Find chunks containing specific text
-- `readFileAsLines()` / `writeFile()` - File manipulation
-- `removeOccurrence()` - Remove code occurrences
 
 ### Configuration
 - **Database**: PostgreSQL via Supabase (connection string in `DATABASE_URL`)
