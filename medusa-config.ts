@@ -12,9 +12,6 @@ module.exports = defineConfig({
       authCors: process.env.AUTH_CORS!,
       jwtSecret: process.env.JWT_SECRET || "supersecret",
       cookieSecret: process.env.COOKIE_SECRET || "supersecret",
-    },
-    static: {
-      uploads: "/uploads"
     }
   },
   admin: {
@@ -52,7 +49,7 @@ module.exports = defineConfig({
             id: "local",
             options: {
               upload_dir: "uploads",
-              backend_url: process.env.MEDUSA_BACKEND_URL || "https://shop.mediabox.co"
+              backend_url: (process.env.MEDUSA_BACKEND_URL || "https://shop.mediabox.co") + "/uploads"
             },
           },
         ],
