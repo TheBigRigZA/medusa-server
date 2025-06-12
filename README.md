@@ -119,8 +119,11 @@ medusa-server/
 │   └── workflows/    # Custom workflows
 ├── medusa-config.ts  # Main configuration
 ├── package.json      # Dependencies
+├── CLAUDE.md         # Development guidance
 └── README.md         # This file
 ```
+
+**Note**: Admin panel files are NOT in this repository. The admin is built and deployed separately from [medusa-admin](https://github.com/TheBigRigZA/medusa-admin).
 
 ## Troubleshooting
 
@@ -138,8 +141,10 @@ medusa-server/
 
 ## Related Repositories
 
-- **Admin Panel**: Served separately as a static site at https://shop.mediabox.co/app
-- See `admin-deployment/README.md` for admin customization details
+- **Admin Panel**: Built and deployed from separate repository [TheBigRigZA/medusa-admin](https://github.com/TheBigRigZA/medusa-admin)
+- **Admin URL**: https://shop.mediabox.co/app
+- **Admin Customizations**: Apply in the admin repository, not here
+- See `admin-customization-setup.md` for details on moving customizations
 
 ## Support
 
