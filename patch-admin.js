@@ -441,16 +441,14 @@ if (typeof document !== 'undefined' && !document.getElementById('mediabox-login-
     console.log("✓ Vite cache cleared successfully");
   }
 
-  // 6) Inject Store Toggle functionality
+  // 6) Inject Store Toggle functionality into main app
   console.log("\n6. Injecting Store Toggle functionality...");
   try {
-    // Find the settings or store page
-    const SETTINGS_PATH = findChunkFileByContainingText("Store Settings") || 
-                         findChunkFileByContainingText("settings") ||
-                         findFilePathByNamePattern("settings-", ".js");
+    // Inject directly into app.mjs for guaranteed loading
+    const APP_PATH = `${__dirname}/node_modules/@medusajs/dashboard/dist/app.mjs`;
     
-    if (SETTINGS_PATH) {
-      let content = fs.readFileSync(SETTINGS_PATH, 'utf8');
+    if (fs.existsSync(APP_PATH)) {
+      let content = fs.readFileSync(APP_PATH, 'utf8');
       
       // Inject store toggle functionality if not already present
       if (!content.includes('mediabox-store-toggle')) {
@@ -590,13 +588,14 @@ if (typeof document !== 'undefined' && !document.getElementById('mediabox-login-
   
   // Initialize store toggle
   const initializeStoreToggle = async () => {
-    // Try to find existing settings page to inject into
-    let targetContainer = document.querySelector('[class*="settings"]') || 
-                         document.querySelector('main') || 
+    // Always try to inject on any page, but prioritize settings pages
+    let targetContainer = document.querySelector('main') || 
+                         document.querySelector('[class*="content"]') ||
+                         document.querySelector('body > div') ||
                          document.body;
     
-    // If we're on the settings page, inject at the top
-    if (window.location.pathname.includes('/settings')) {
+    // Always show the toggle (not just on settings pages)
+    if (targetContainer && !document.getElementById('mediabox-store-toggle')) {
       const storeToggle = createStoreToggle();
       if (targetContainer.firstChild) {
         targetContainer.insertBefore(storeToggle, targetContainer.firstChild);
@@ -650,33 +649,49 @@ if (typeof document !== 'undefined' && !document.getElementById('mediabox-login-
     }
   };
   
+  // Debug logging
+  console.log('Mediabox Store Toggle: Script loaded');
+  
   // Initialize when DOM is ready
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeStoreToggle);
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('Mediabox Store Toggle: DOM loaded, initializing...');
+      initializeStoreToggle();
+    });
   } else {
+    console.log('Mediabox Store Toggle: DOM ready, initializing...');
     initializeStoreToggle();
   }
   
-  // Also initialize on route changes (for SPA)
+  // Also initialize on route changes (for SPA) - more aggressive
   let lastPath = window.location.pathname;
   setInterval(() => {
     if (lastPath !== window.location.pathname) {
       lastPath = window.location.pathname;
+      console.log('Mediabox Store Toggle: Route change detected, reinitializing...');
       setTimeout(initializeStoreToggle, 500);
     }
   }, 1000);
+  
+  // Also try every 5 seconds if not present (aggressive fallback)
+  setInterval(() => {
+    if (!document.getElementById('mediabox-store-toggle')) {
+      console.log('Mediabox Store Toggle: Not found, retrying...');
+      initializeStoreToggle();
+    }
+  }, 5000);
 })();
 `;
         
         // Inject the code at the end of the file
         content = content + '\n' + storeToggleCode;
-        fs.writeFileSync(SETTINGS_PATH, content);
-        console.log("✓ Store toggle functionality injected");
+        fs.writeFileSync(APP_PATH, content);
+        console.log("✓ Store toggle functionality injected into app.mjs");
       } else {
         console.log("✓ Store toggle functionality already present");
       }
     } else {
-      console.log("⚠️  Could not find settings file to inject store toggle");
+      console.log("⚠️  Could not find app.mjs file to inject store toggle");
     }
   } catch (error) {
     console.log("❌ Error injecting store toggle:", error.message);
