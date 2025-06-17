@@ -1,7 +1,7 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
-  const storeSettingsModuleService = req.scope.resolve("storeSettingsModule")
+  const storeSettingsModuleService = req.scope.resolve("storeSettingsModule") as any
   
   const settings = await storeSettingsModuleService.retrieve()
   

@@ -1,7 +1,7 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
-  const storeSettingsModuleService = req.scope.resolve("storeSettingsModule")
+  const storeSettingsModuleService = req.scope.resolve("storeSettingsModule") as any
   
   const settings = await storeSettingsModuleService.retrieve()
   
@@ -9,7 +9,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
 }
 
 export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
-  const storeSettingsModuleService = req.scope.resolve("storeSettingsModule")
+  const storeSettingsModuleService = req.scope.resolve("storeSettingsModule") as any
   
   const { shop_enabled, show_coming_soon, maintenance_message, feature_flags } = req.body as {
     shop_enabled?: boolean
